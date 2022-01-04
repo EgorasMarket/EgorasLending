@@ -6,7 +6,7 @@ const DiamondCutFacet = artifacts.require('DiamondCutFacet')
 const DiamondLoupeFacet = artifacts.require('DiamondLoupeFacet')
 const OwnershipFacet = artifacts.require('OwnershipFacet')
 const EgorasLoanFacet = artifacts.require('EgorasLoanFacet')
-const EgorasNFTFacets = artifacts.require('EgorasNFTFacets')
+const EgorasNFTFacet = artifacts.require('EgorasNFTFacet')
 const EgorasPriceOracleFacet = artifacts.require('EgorasPriceOracleFacet')
 const EgorasSwapFacet = artifacts.require('EgorasSwapFacet')
 
@@ -33,7 +33,7 @@ function getSelectors (contract) {
 
 module.exports = function (deployer, network, accounts) {
  deployer.deploy(EgorasLoanFacet);
- deployer.deploy(EgorasNFTFacets);
+ deployer.deploy(EgorasNFTFacet);
  deployer.deploy(EgorasPriceOracleFacet);
  deployer.deploy(EgorasSwapFacet);
 
@@ -44,7 +44,7 @@ module.exports = function (deployer, network, accounts) {
       [DiamondCutFacet.address, FacetCutAction.Add, getSelectors(DiamondCutFacet)],
       [DiamondLoupeFacet.address, FacetCutAction.Add, getSelectors(DiamondLoupeFacet)],
       [EgorasLoanFacet.address, FacetCutAction.Add, getSelectors(EgorasLoanFacet)],
-      [EgorasNFTFacets.address, FacetCutAction.Add, getSelectors(EgorasNFTFacets)],
+      [EgorasNFTFacet.address, FacetCutAction.Add, getSelectors(EgorasNFTFacet)],
       [EgorasPriceOracleFacet.address, FacetCutAction.Add, getSelectors(EgorasPriceOracleFacet)],
       [EgorasSwapFacet.address, FacetCutAction.Add, getSelectors(EgorasSwapFacet)],
       [OwnershipFacet.address, FacetCutAction.Add, getSelectors(OwnershipFacet)],
