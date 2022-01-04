@@ -280,14 +280,11 @@ function validateRequest(uint _requestID) public{
          isloan: _isloan,
          isConfirmed: false
         });
-
              loans.push(_loan);
              uint256 newLoanID = loans.length - 1;
-             
              backersReward[newLoanID] = backersReward[newLoanID].add(uint(uint(_inventoryFee).divideDecimalRound(uint(10000)).multiplyDecimalRound(uint(backers))));
              companyReward[newLoanID] = companyReward[newLoanID].add(uint(uint(_inventoryFee).divideDecimalRound(uint(10000)).multiplyDecimalRound(uint(company))));
              branchReward[newLoanID] = branchReward[newLoanID].add(uint(uint(_inventoryFee).divideDecimalRound(uint(10000)).multiplyDecimalRound(uint(branch))));
-             
              emit LoanCreated(newLoanID, _title, _amount, _length,_image_url, _inventoryFee, msg.sender, _isloan, false, _loanMetaData);
         }
 
@@ -340,19 +337,16 @@ function confirmLoan(uint _loanID)  external  onlyOwner{
      if(loanVoteAmount[_loanID] >= votingThreshold){
      require(ENFT.mint(loan.creator, _loanID), "Unable to mint token");
      require(EUSD.mint(loan.creator, loan.amount.sub(loan.inventoryFee)), "Fail to transfer fund");
-     require(EUSD.mint(owner(), companyReward[_loanID]), "Fail to transfer fund");
+     require(EUSD.mint(LibDiamond.contractOwner(), companyReward[_loanID]), "Fail to transfer fund");
      require(EUSD.mint(branchRewardAddress[loan.creator], branchReward[_loanID]), "Fail to transfer fund");
     for (uint256 i = 0; i < listOfvoters[_loanID].length; i++) {
            address voterAddress = listOfvoters[_loanID][i].voter;
-
-
             // Start of reward calc
             uint totalUserVotePower = votePower[_loanID][voterAddress].mul(1000);
             uint currentTotalPower = loanVoteAmount[_loanID];
             uint percentage = totalUserVotePower.div(currentTotalPower);
             uint share = percentage.mul(backersReward[_loanID]).div(1000);
             // End of reward calc
-            
            uint amount = votePower[_loanID][voterAddress];
            require(egr.transfer(voterAddress, amount), "Fail to refund voter");
            votePower[_loanID][voterAddress] = votePower[_loanID][voterAddress].sub(amount);
@@ -390,31 +384,31 @@ function repayLoan(uint _loanID) external{
 }
 
 
-function buy(uint _id, string memory _buyerMetadata) external{
-    Loan storage buyorder = loans[_id];
-    require(!buyorder.isloan, "Invalid buy order.");
-    require(isApproved[_id], "You can't buy this asset at the moment!");
-    IERC20 iERC20 = IERC20(egorasEUSD);
-    NFT eNFT = NFT(eNFTAddress);
-    require(iERC20.allowance(msg.sender, address(this)) >= buyorder.amount, "Insufficient EUSD allowance for repayment!");
-    iERC20.burnFrom(msg.sender, buyorder.amount);
-    eNFT.burn(_id);
-    emit Bought(_id,_buyerMetadata, block.timestamp); 
-}
+// function buy(uint _id, string memory _buyerMetadata) external{
+//     Loan storage buyorder = loans[_id];
+//     require(!buyorder.isloan, "Invalid buy order.");
+//     require(isApproved[_id], "You can't buy this asset at the moment!");
+//     IERC20 iERC20 = IERC20(egorasEUSD);
+//     NFT eNFT = NFT(eNFTAddress);
+//     require(iERC20.allowance(msg.sender, address(this)) >= buyorder.amount, "Insufficient EUSD allowance for repayment!");
+//     iERC20.burnFrom(msg.sender, buyorder.amount);
+//     eNFT.burn(_id);
+//     emit Bought(_id,_buyerMetadata, block.timestamp); 
+// }
 
- function auction(uint _loanID, string memory _buyerMetadata) external{
-   Loan storage loan = loans[_loanID];
-   require(loan.isloan, "Invalid loan.");
-   require(block.timestamp >= loan.length, "You can't auction it now!");
-   require(isApproved[_loanID], "This loan is not eligible for repayment!");
-   require(loan.creator != msg.sender, "Unauthorized.");
-    IERC20 iERC20 = IERC20(egorasEUSD);
-    NFT eNFT = NFT(eNFTAddress);
-    require(iERC20.allowance(msg.sender, address(this)) >= loan.amount, "Insufficient EUSD allowance for repayment!");
-    iERC20.burnFrom(msg.sender, loan.amount);
-    eNFT.burn(_loanID);
-    emit Bought(_loanID,_buyerMetadata, block.timestamp); 
- }
+//  function auction(uint _loanID, string memory _buyerMetadata) external{
+//    Loan storage loan = loans[_loanID];
+//    require(loan.isloan, "Invalid loan.");
+//    require(block.timestamp >= loan.length, "You can't auction it now!");
+//    require(isApproved[_loanID], "This loan is not eligible for repayment!");
+//    require(loan.creator != msg.sender, "Unauthorized.");
+//     IERC20 iERC20 = IERC20(egorasEUSD);
+//     NFT eNFT = NFT(eNFTAddress);
+//     require(iERC20.allowance(msg.sender, address(this)) >= loan.amount, "Insufficient EUSD allowance for repayment!");
+//     iERC20.burnFrom(msg.sender, loan.amount);
+//     eNFT.burn(_loanID);
+//     emit Bought(_loanID,_buyerMetadata, block.timestamp); 
+//  }
 
 function rewardVoters() external{
 require(block.timestamp >= nextRewardDate, "Not yet time. Try again later");

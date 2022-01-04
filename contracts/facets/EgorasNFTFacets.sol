@@ -549,7 +549,7 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
     string private _name;
 
     // total supply
-    uint256 private _totalSupply
+    uint256 private _totalSupply;
 
     // Token symbol
     string private _symbol;
