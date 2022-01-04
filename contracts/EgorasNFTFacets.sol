@@ -537,7 +537,7 @@ library Strings {
     }
 }
 
-contract EgorasNFTFacet is Context, ERC165, IERC721, IERC721Metadata {
+contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
     using Address for address;
     using Strings for uint256;
     mapping(address => bool)  smartContractAddress;
@@ -569,10 +569,10 @@ contract EgorasNFTFacet is Context, ERC165, IERC721, IERC721Metadata {
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
-    function Initconstructor(string memory name_, string memory symbol_) external {
+   constructor(string memory name_, string memory symbol_, address _loanSmartContact){
         _name = name_;
         _symbol = symbol_;
-        smartContractAddress[address(this)] = true;
+        smartContractAddress[_loanSmartContact] = true;
     }
 
     /**
@@ -647,7 +647,7 @@ contract EgorasNFTFacet is Context, ERC165, IERC721, IERC721Metadata {
      * @dev See {IERC721-approve}.
      */
     function approve(address to, uint256 tokenId) public virtual override {
-        address owner = EgorasNFTFacet.ownerOf(tokenId);
+        address owner = ERC721.ownerOf(tokenId);
         require(to != owner, "ERC721: approval to current owner");
 
         require(
@@ -771,7 +771,7 @@ contract EgorasNFTFacet is Context, ERC165, IERC721, IERC721Metadata {
      */
     function _isApprovedOrOwner(address spender, uint256 tokenId) internal view virtual returns (bool) {
         require(_exists(tokenId), "ERC721: operator query for nonexistent token");
-        address owner = EgorasNFTFacet.ownerOf(tokenId);
+        address owner = ERC721.ownerOf(tokenId);
         return (spender == owner || getApproved(tokenId) == spender || isApprovedForAll(owner, spender));
     }
 
@@ -840,7 +840,7 @@ contract EgorasNFTFacet is Context, ERC165, IERC721, IERC721Metadata {
      * Emits a {Transfer} event.
      */
     function _burn(uint256 tokenId) internal virtual {
-        address owner = EgorasNFTFacet.ownerOf(tokenId);
+        address owner = ERC721.ownerOf(tokenId);
 
         _beforeTokenTransfer(owner, address(0), tokenId);
 
@@ -870,7 +870,7 @@ contract EgorasNFTFacet is Context, ERC165, IERC721, IERC721Metadata {
         address to,
         uint256 tokenId
     ) internal virtual {
-        require(EgorasNFTFacet.ownerOf(tokenId) == from, "ERC721: transfer of token that is not own");
+        require(ERC721.ownerOf(tokenId) == from, "ERC721: transfer of token that is not own");
         require(to != address(0), "ERC721: transfer to the zero address");
 
         _beforeTokenTransfer(from, to, tokenId);
@@ -892,7 +892,7 @@ contract EgorasNFTFacet is Context, ERC165, IERC721, IERC721Metadata {
      */
     function _approve(address to, uint256 tokenId) internal virtual {
         _tokenApprovals[tokenId] = to;
-        emit Approval(EgorasNFTFacet.ownerOf(tokenId), to, tokenId);
+        emit Approval(ERC721.ownerOf(tokenId), to, tokenId);
     }
 
   function mint(address to, uint tokenID) external onlyApproved returns (bool){
