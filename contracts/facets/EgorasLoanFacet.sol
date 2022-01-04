@@ -26,7 +26,7 @@ function burn(uint tokenID) external returns(bool);
   
 }
 
-contract EgorasV3{
+contract EgorasLoanFacet{
    using SafeDecimalMath for uint;
     mapping(uint => bool) activeRequest;
     mapping(uint => mapping(address => uint)) requestPower;
