@@ -121,9 +121,9 @@ contract EgorasLoanFacet{
         uint _totalPower
         
     );
-    event Bought(uint _id, string _metadata, uint _time);
+   
     event Refunded(uint amount, address voterAddress, uint _id, uint time);
-    event Rewarded(uint amount, address voterAddress, uint _id, uint time);
+    
     
     event LoanCreated(
         uint newLoanID, string _title,  uint _amount,  uint _length, 
@@ -383,51 +383,28 @@ function repayLoan(uint _loanID) external{
    emit Repay(loan.amount, block.timestamp, _loanID);  
 }
 
-
-// function buy(uint _id, string memory _buyerMetadata) external{
-//     Loan storage buyorder = loans[_id];
-//     require(!buyorder.isloan, "Invalid buy order.");
-//     require(isApproved[_id], "You can't buy this asset at the moment!");
-//     IERC20 iERC20 = IERC20(egorasEUSD);
-//     NFT eNFT = NFT(eNFTAddress);
-//     require(iERC20.allowance(msg.sender, address(this)) >= buyorder.amount, "Insufficient EUSD allowance for repayment!");
-//     iERC20.burnFrom(msg.sender, buyorder.amount);
-//     eNFT.burn(_id);
-//     emit Bought(_id,_buyerMetadata, block.timestamp); 
-// }
-
-//  function auction(uint _loanID, string memory _buyerMetadata) external{
-//    Loan storage loan = loans[_loanID];
-//    require(loan.isloan, "Invalid loan.");
-//    require(block.timestamp >= loan.length, "You can't auction it now!");
-//    require(isApproved[_loanID], "This loan is not eligible for repayment!");
-//    require(loan.creator != msg.sender, "Unauthorized.");
-//     IERC20 iERC20 = IERC20(egorasEUSD);
-//     NFT eNFT = NFT(eNFTAddress);
-//     require(iERC20.allowance(msg.sender, address(this)) >= loan.amount, "Insufficient EUSD allowance for repayment!");
-//     iERC20.burnFrom(msg.sender, loan.amount);
-//     eNFT.burn(_loanID);
-//     emit Bought(_loanID,_buyerMetadata, block.timestamp); 
-//  }
-
-function rewardVoters() external{
-require(block.timestamp >= nextRewardDate, "Not yet time. Try again later");
-require(canReward[currentPeriod], "No votes yet");
- IERC20 iERC20 = IERC20(egorasEGC);
- for (uint256 i = 0; i < curVoters[currentPeriod].length; i++) {
-           address voterAddress = curVoters[currentPeriod][i].voter;
-           uint amount = currentUserTotalVotePower[currentPeriod][voterAddress];
-           uint total = currentTotalVotePower[currentPeriod];
-           uint per = amount.divideDecimalRound(total);
-           uint reward = dailyIncentive.multiplyDecimalRound(per);
-           require(iERC20.mint(voterAddress, reward ), "Fail to mint EGC");
-           emit Rewarded(reward, voterAddress, currentPeriod, block.timestamp);
-    } 
+function getAddresses() external view returns (address, address) {
+    return(egorasEUSD, eNFTAddress);
+}
+function rewardMeta() external view returns(bool, uint, uint, uint, uint, uint,address){
+return (canReward[currentPeriod], nextRewardDate, curVoters[currentPeriod].length,currentPeriod, dailyIncentive, currentPeriod, egorasEGC);
+}
+function rewardUsserMeta(uint index, uint curPeriod) external view returns(address, uint, uint){
+     address voterAddress = curVoters[curPeriod][index].voter;
+     uint amount = currentUserTotalVotePower[curPeriod][voterAddress];
+     uint total = currentTotalVotePower[curPeriod];
+     return (voterAddress, amount, total);
+}
+function getLoanData(uint _lID) external view returns (Loan memory, bool) {
+     Loan memory loanPlaceholder = loans[_lID];
+     return (loanPlaceholder, isApproved[_lID]);
+}
+function updatePeriods() external{
    currentPeriod = block.timestamp;
    nextRewardDate = block.timestamp.add(1 days);
    canReward[currentPeriod] = false;
-
 }
+
 
 
 }
