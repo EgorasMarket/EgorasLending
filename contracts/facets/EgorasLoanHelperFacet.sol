@@ -41,7 +41,7 @@ interface LOAN {
 function rewardMeta() external view returns(bool, uint, uint, uint, uint, address);
 function rewardUsserMeta(uint index, uint curPeriod) external view returns(address, uint, uint);
 function updatePeriods() external;
-function getLoanData(uint _lID) external view returns (string memory, uint, uint, string memory, address, bool, string memory, uint, bool, bool);
+function getLoanData(uint _lID) external view returns (uint, uint, address, bool, bool);
 function getAddresses() external view returns (address, address);
 }
 
@@ -90,20 +90,18 @@ require(_HcanReward, "No votes yet");
 
 
 function buy(uint _id, string memory _buyerMetadata) external{
-    string memory title;
+   
     uint amount;
     uint length;
-    string memory image_url;
+  
     address creator;
     bool isloan;
-    string memory loanMetaData;
-    uint inventoryFee;
-    bool isConfirmed;
+   
 
     LOAN ln = LOAN(address(this));
   
     bool isApproved;
-     (title, amount, length, image_url, creator, isloan, loanMetaData, inventoryFee, isConfirmed, isApproved) = ln.getLoanData(_id);
+     ( amount, length, creator, isloan, isApproved) = ln.getLoanData(_id);
     require(!isloan, "Invalid buy order.");
     require(isApproved, "You can't buy this asset at the moment!");
     address egorasEUSD;
@@ -118,19 +116,17 @@ function buy(uint _id, string memory _buyerMetadata) external{
 }
 
  function auction(uint _loanID, string memory _buyerMetadata) external{
-    string memory title;
+  
     uint amount;
     uint length;
-    string memory image_url;
+  
     address creator;
     bool isloan;
-    string memory loanMetaData;
-    uint inventoryFee;
-    bool isConfirmed;
+  
    LOAN ln = LOAN(address(this));
   
    bool isApproved;
-     (title, amount, length, image_url, creator, isloan, loanMetaData, inventoryFee, isConfirmed, isApproved) = ln.getLoanData(_loanID);
+     (amount,length, creator, isloan, isApproved) = ln.getLoanData(_loanID);
  
    require(isloan, "Invalid loan.");
    require(block.timestamp >= length, "You can't auction it now!");

@@ -397,10 +397,10 @@ function rewardUsserMeta(uint index, uint curPeriod) external view returns(addre
 }
 
 
-function getLoanData(uint _lID) external view returns (string memory, uint, uint, string memory, address, bool, string memory, uint, bool, bool) {
+function getLoanData(uint _lID) external view returns (uint, uint,  address, bool, bool) {
      Loan memory l = loans[_lID];
      bool _isApprived = isApproved[_lID];
-     return (l.title, l.amount, l.length, l.image_url, l.creator, l.isloan, l.loanMetaData, l.inventoryFee, l.isConfirmed,_isApprived);
+     return (l.amount, l.length, l.creator, l.isloan,_isApprived);
 }
 function updatePeriods() external{
    currentPeriod = block.timestamp;
