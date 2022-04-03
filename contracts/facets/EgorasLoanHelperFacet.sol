@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 import "../libraries/LibDiamond.sol";
 import "../libraries/SafeDecimalMath.sol";
 import "../libraries/SafeMath.sol";
-
+import "./AppStorage.sol";
 interface IERC20 {
     function balanceOf(address account) external view returns (uint256);
     function allowance(address owner, address spender) external view returns (uint256);
@@ -27,6 +27,7 @@ function burn(uint tokenID) external returns(bool);
 }
 
 interface LOAN {
+    
       struct Loan{
         string title;
         uint amount;
@@ -48,7 +49,9 @@ function getAddresses() external view returns (address, address);
 
 
 contract EgorasLoanHelperFacet {
+    AppStorage internal s;
   using SafeDecimalMath for uint;
+    using SafeMath for uint256;
   struct LoanPlaceholder{
         string title;
         uint amount;
@@ -88,6 +91,22 @@ require(_HcanReward, "No votes yet");
    ln.updatePeriods();
 }
 
+ function Initconstructor(
+address _egorasEusd, address _egorasEgr, address _egorasEGC, uint _votingThreshold, uint _backers, uint _company, uint _branch, uint _dailyIncentive) external{
+        require(address(0) != _egorasEusd, "Invalid address");
+        require(address(0) != _egorasEgr, "Invalid address");
+         require(address(0) != _egorasEGC, "Invalid address");
+        s.egorasEGR = _egorasEgr;
+        s.egorasEUSD = _egorasEusd;
+        s.egorasEGC  = _egorasEGC;
+        s.votingThreshold = _votingThreshold;
+        s.backers = _backers;
+        s.company = _company;
+        s.branch = _branch;
+        s.nextRewardDate = block.timestamp.add(1 days);
+        s.currentPeriod = block.timestamp;
+        s.dailyIncentive = _dailyIncentive;
+}
 
 function buy(uint _id, string memory _buyerMetadata) external{
    
@@ -99,7 +118,7 @@ function buy(uint _id, string memory _buyerMetadata) external{
    
 
     LOAN ln = LOAN(address(this));
-  
+
     bool isApproved;
      ( amount, length, creator, isloan, isApproved) = ln.getLoanData(_id);
     require(!isloan, "Invalid buy order.");
@@ -144,9 +163,9 @@ function buy(uint _id, string memory _buyerMetadata) external{
  }
 
 
-// function getAddresses() external view returns (address, address) {
-//      LOAN ln = LOAN(address(this));
-//     return(ln.egorasEUSD, ln.eNFTAddress);
-// }
+function getAddresses() external view returns (address, address) {
+    
+    return(s.egorasEUSD, s.eNFTAddress);
+}
     
 }

@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 import "../libraries/LibDiamond.sol";
 import "../libraries/SafeDecimalMath.sol";
 import "../libraries/SafeMath.sol";
-
+import "./AppStorage.sol";
 interface IERC20 {
     function balanceOf(address account) external view returns (uint256);
     function allowance(address owner, address spender) external view returns (uint256);
@@ -27,6 +27,7 @@ function burn(uint tokenID) external returns(bool);
 }
 
 contract EgorasLoanFacet{
+   AppStorage internal s;
    using SafeDecimalMath for uint;
     mapping(uint => bool) activeRequest;
     mapping(uint => mapping(address => uint)) requestPower;
@@ -86,17 +87,7 @@ contract EgorasLoanFacet{
   mapping(uint => uint) buyVoteAmount;
   mapping(uint => bool) isApproved;
   using SafeMath for uint256;
-  address private egorasEUSD;
-  address private egorasEGC;
-  address private eNFTAddress;
-  address private egorasEGR;
-  uint private votingThreshold;
-  uint private systemFeeBalance;
-  uint private requestCreationPower;
-  uint public backers;
-  uint public company;
-  uint public branch;
-  uint public dailyIncentive;
+
   mapping(uint => uint) backersReward;
   mapping(uint => uint) companyReward;
   mapping(uint => uint) branchReward;
@@ -107,8 +98,7 @@ contract EgorasLoanFacet{
   mapping(uint => Votters[]) curVoters;
   mapping(uint => Votters[]) requestVoters;
   mapping(uint => mapping(address => uint)) votePower;
-  uint private currentPeriod;
-  uint public nextRewardDate;
+  
   mapping(uint => uint) currentTotalVotePower;
   mapping(uint => bool) canReward;
   mapping(uint => mapping(address => uint)) currentUserTotalVotePower;
@@ -134,22 +124,7 @@ event Voted(address voter,  uint loanID, uint _totalBackedAmount, uint _userPowe
  function _msgSender() internal view virtual returns (address) {
         return msg.sender;
     }
- function Initconstructor(
-address _egorasEusd, address _egorasEgr, address _egorasEGC, uint _votingThreshold, uint _backers, uint _company, uint _branch, uint _dailyIncentive) external{
-        require(address(0) != _egorasEusd, "Invalid address");
-        require(address(0) != _egorasEgr, "Invalid address");
-         require(address(0) != _egorasEGC, "Invalid address");
-        egorasEGR = _egorasEgr;
-        egorasEUSD = _egorasEusd;
-        egorasEGC  = _egorasEGC;
-        votingThreshold = _votingThreshold;
-        backers = _backers;
-        company = _company;
-        branch = _branch;
-        nextRewardDate = block.timestamp.add(1 days);
-        currentPeriod = block.timestamp;
-        dailyIncentive = _dailyIncentive;
-  }
+
 
    function addBranch(address _branch, address _branchRewardAddress) external onlyOwner returns(bool){
         branchAddress[_branch] = true;
@@ -157,7 +132,7 @@ address _egorasEusd, address _egorasEgr, address _egorasEGC, uint _votingThresho
         return true;
     }
      function addNFTAddress(address _eNFTAddress) external onlyOwner returns(bool){
-        eNFTAddress = _eNFTAddress;
+        s.eNFTAddress = _eNFTAddress;
         return true;
     }
    function suspendBranch(address _branch) external onlyOwner returns(bool) {
@@ -207,41 +182,41 @@ function createRequest(uint _requestType,uint _threshold, uint _incentive, uint 
 
 function governanceVote(uint _requestID, uint _votePower) public{
     require(_votePower > 0, "Power must be greater than zero!");
-    IERC20 iERC20 = IERC20(egorasEGR);
+    IERC20 iERC20 = IERC20(s.egorasEGR);
     require(iERC20.allowance(msg.sender, address(this)) >= _votePower, "Insufficient EGR allowance for vote!");
     require(iERC20.transferFrom(msg.sender, address(this), _votePower), "Error");
     requestPower[_requestID][msg.sender] = requestPower[_requestID][msg.sender].add(_votePower);
 
       requestVoteAmount[_requestID] = requestVoteAmount[_requestID].add(_votePower);
-        currentTotalVotePower[currentPeriod] = currentTotalVotePower[currentPeriod].add(_votePower);
-        currentUserTotalVotePower[currentPeriod][msg.sender] = currentUserTotalVotePower[currentPeriod][msg.sender].add(_votePower);
+        currentTotalVotePower[s.currentPeriod] = currentTotalVotePower[s.currentPeriod].add(_votePower);
+        currentUserTotalVotePower[s.currentPeriod][msg.sender] = currentUserTotalVotePower[s.currentPeriod][msg.sender].add(_votePower);
          
-         if(!currentVoters[currentPeriod][msg.sender]){
-             currentVoters[currentPeriod][msg.sender] == true;
-             curVoters[currentPeriod].push(Votters(msg.sender));
+         if(!currentVoters[s.currentPeriod][msg.sender]){
+             currentVoters[s.currentPeriod][msg.sender] == true;
+             curVoters[s.currentPeriod].push(Votters(msg.sender));
          }
         if(!manageRequestVoters[_requestID][msg.sender]){
             manageRequestVoters[_requestID][msg.sender] = true;  
             
             requestVoters[_requestID].push(Votters(msg.sender));
         }   
-        canReward[currentPeriod] = true;
+        canReward[s.currentPeriod] = true;
         emit RequestVote(msg.sender, _requestID, _votePower, requestVoteAmount[_requestID]);   
 }
 
 function validateRequest(uint _requestID) public{
     Requests storage request = requests[_requestID];
-    require(requestVoteAmount[_requestID] >= votingThreshold, "It has not reach the voting threshold!");
+    require(requestVoteAmount[_requestID] >= s.votingThreshold, "It has not reach the voting threshold!");
     require(!request.stale, "This has already been validated");
-    IERC20 egr = IERC20(egorasEGR);
+    IERC20 egr = IERC20(s.egorasEGR);
     if(request.requestType == 0){
-        votingThreshold = request.threshold;
+        s.votingThreshold = request.threshold;
     }else if(request.requestType == 1){
-        dailyIncentive = request.incentive;
+        s.dailyIncentive = request.incentive;
     }else if(request.requestType == 2){
-        backers = request.backers;
-        company = request.company;       
-        branch  = request.branch;
+        s.backers = request.backers;
+        s.company = request.company;       
+        s.branch  = request.branch;
     }
     
     for (uint256 i = 0; i < requestVoters[_requestID].length; i++) {
@@ -253,7 +228,7 @@ function validateRequest(uint _requestID) public{
     }
     
    request.stale = true;
-    emit ApproveRequest(_requestID, requestVoteAmount[_requestID] >= votingThreshold, msg.sender);
+    emit ApproveRequest(_requestID, requestVoteAmount[_requestID] >= s.votingThreshold, msg.sender);
 }
   
  function applyForLoan(
@@ -268,7 +243,7 @@ function validateRequest(uint _requestID) public{
         require(_amount > 0, "Loan amount should be greater than zero");
         require(_length > 0, "Loan duration should be greater than zero");
         require(bytes(_title).length > 3, "Loan title should more than three characters long");
-        require(branch.add(backers.add(company)) == 10000, "Invalid percent");
+        require(s.branch.add(s.backers.add(s.company)) == 10000, "Invalid percent");
          Loan memory _loan = Loan({
          title: _title,
          amount: _amount,
@@ -282,9 +257,9 @@ function validateRequest(uint _requestID) public{
         });
              loans.push(_loan);
              uint256 newLoanID = loans.length - 1;
-             backersReward[newLoanID] = backersReward[newLoanID].add(uint(uint(_inventoryFee).divideDecimalRound(uint(10000)).multiplyDecimalRound(uint(backers))));
-             companyReward[newLoanID] = companyReward[newLoanID].add(uint(uint(_inventoryFee).divideDecimalRound(uint(10000)).multiplyDecimalRound(uint(company))));
-             branchReward[newLoanID] = branchReward[newLoanID].add(uint(uint(_inventoryFee).divideDecimalRound(uint(10000)).multiplyDecimalRound(uint(branch))));
+             backersReward[newLoanID] = backersReward[newLoanID].add(uint(uint(_inventoryFee).divideDecimalRound(uint(10000)).multiplyDecimalRound(uint(s.backers))));
+             companyReward[newLoanID] = companyReward[newLoanID].add(uint(uint(_inventoryFee).divideDecimalRound(uint(10000)).multiplyDecimalRound(uint(s.company))));
+             branchReward[newLoanID] = branchReward[newLoanID].add(uint(uint(_inventoryFee).divideDecimalRound(uint(10000)).multiplyDecimalRound(uint(s.branch))));
              emit LoanCreated(newLoanID, _title, _amount, _length,_image_url, _inventoryFee, msg.sender, _isloan, false, _loanMetaData);
         }
 
@@ -295,27 +270,27 @@ function validateRequest(uint _requestID) public{
             Loan memory loan = loans[_loanID];
             require(loan.isConfirmed, "Can't vote at the moment!");
             require(_votePower > 0, "Power must be greater than zero!");
-            IERC20 iERC20 = IERC20(egorasEGR);
+            IERC20 iERC20 = IERC20(s.egorasEGR);
             require(iERC20.allowance(msg.sender, address(this)) >= _votePower, "Insufficient EGR allowance for vote!");
             require(iERC20.transferFrom(msg.sender, address(this), _votePower), "Error!");
             loanVoteAmount[_loanID] = loanVoteAmount[_loanID].add(_votePower);
              votePower[_loanID][msg.sender] = votePower[_loanID][msg.sender].add(_votePower);
-            currentTotalVotePower[currentPeriod] = currentTotalVotePower[currentPeriod].add(_votePower);
-            currentUserTotalVotePower[currentPeriod][msg.sender] = currentUserTotalVotePower[currentPeriod][msg.sender].add(_votePower);
-             if(!currentVoters[currentPeriod][msg.sender]){
-             currentVoters[currentPeriod][msg.sender] == true;
-             curVoters[currentPeriod].push(Votters(msg.sender));
+            currentTotalVotePower[s.currentPeriod] = currentTotalVotePower[s.currentPeriod].add(_votePower);
+            currentUserTotalVotePower[s.currentPeriod][msg.sender] = currentUserTotalVotePower[s.currentPeriod][msg.sender].add(_votePower);
+             if(!currentVoters[s.currentPeriod][msg.sender]){
+             currentVoters[s.currentPeriod][msg.sender] == true;
+             curVoters[s.currentPeriod].push(Votters(msg.sender));
          }
             if(!hasVoted[_loanID][msg.sender]){
                  hasVoted[_loanID][msg.sender] = true;
                 listOfvoters[_loanID].push(Votters(msg.sender));
             }
-             canReward[currentPeriod] = true;
+             canReward[s.currentPeriod] = true;
             emit Voted(msg.sender, _loanID,  loanVoteAmount[_loanID], _votePower);
     } 
 
     function isDue(uint _loanID) public view returns (bool) {
-        if (loanVoteAmount[_loanID] >= votingThreshold)
+        if (loanVoteAmount[_loanID] >= s.votingThreshold)
             return true;
         else
             return false;
@@ -324,17 +299,17 @@ function validateRequest(uint _requestID) public{
 function confirmLoan(uint _loanID)  external  onlyOwner{
     Loan storage loan = loans[_loanID];
     loan.isConfirmed = true;
-    emit Confirmed(_loanID,votingThreshold);
+    emit Confirmed(_loanID,s.votingThreshold);
 }
     function approveLoan(uint _loanID) external{
     Loan storage loan = loans[_loanID];
     require(loan.isConfirmed, "This loan is yet to be confirmed!");
      require(isDue(_loanID), "Voting is not over yet!");
      require(!stale[_loanID], "The loan is either approve/declined");
-     NFT ENFT = NFT(eNFTAddress);
-     IERC20 EUSD = IERC20(egorasEUSD);
-     IERC20 egr = IERC20(egorasEGR);
-     if(loanVoteAmount[_loanID] >= votingThreshold){
+     NFT ENFT = NFT(s.eNFTAddress);
+     IERC20 EUSD = IERC20(s.egorasEUSD);
+     IERC20 egr = IERC20(s.egorasEGR);
+     if(loanVoteAmount[_loanID] >= s.votingThreshold){
      require(ENFT.mint(loan.creator, _loanID), "Unable to mint token");
      require(EUSD.mint(loan.creator, loan.amount.sub(loan.inventoryFee)), "Fail to transfer fund");
      require(EUSD.mint(LibDiamond.contractOwner(), companyReward[_loanID]), "Fail to transfer fund");
@@ -375,8 +350,8 @@ function repayLoan(uint _loanID) external{
    require(loan.length >= block.timestamp, "Repayment period is over!");
    require(isApproved[_loanID], "This loan is not eligible for repayment!");
    require(loan.creator == msg.sender, "Unauthorized.");
-   IERC20 iERC20 = IERC20(egorasEUSD);
-   NFT eNFT = NFT(eNFTAddress);
+   IERC20 iERC20 = IERC20(s.egorasEUSD);
+   NFT eNFT = NFT(s.eNFTAddress);
    require(iERC20.allowance(msg.sender, address(this)) >= loan.amount, "Insufficient EUSD allowance for repayment!");
    iERC20.burnFrom(msg.sender, loan.amount);
    eNFT.burn(_loanID);
@@ -385,7 +360,7 @@ function repayLoan(uint _loanID) external{
 
 
 function rewardMeta() external view returns(bool, uint, uint, uint, uint, uint,address){
-return (canReward[currentPeriod], nextRewardDate, curVoters[currentPeriod].length,currentPeriod, dailyIncentive, currentPeriod, egorasEGC);
+return (canReward[s.currentPeriod], s.nextRewardDate, curVoters[s.currentPeriod].length,s.currentPeriod, s.dailyIncentive, s.currentPeriod, s.egorasEGC);
 }
 function rewardUsserMeta(uint index, uint curPeriod) external view returns(address, uint, uint){
      address voterAddress = curVoters[curPeriod][index].voter;
@@ -401,9 +376,9 @@ function getLoanData(uint _lID) external view returns (uint, uint,  address, boo
      return (l.amount, l.length, l.creator, l.isloan,_isApprived);
 }
 function updatePeriods() external{
-   currentPeriod = block.timestamp;
-   nextRewardDate = block.timestamp.add(1 days);
-   canReward[currentPeriod] = false;
+   s.currentPeriod = block.timestamp;
+   s.nextRewardDate = block.timestamp.add(1 days);
+   canReward[s.currentPeriod] = false;
 }
 
 
