@@ -143,5 +143,10 @@ function buy(uint _id, string memory _buyerMetadata) external{
     emit Bought(_loanID,_buyerMetadata, block.timestamp); 
  }
 
+
+// function getAddresses() external view returns (address, address) {
+//      LOAN ln = LOAN(address(this));
+//     return(ln.egorasEUSD, ln.eNFTAddress);
+// }
     
 }

@@ -383,9 +383,7 @@ function repayLoan(uint _loanID) external{
    emit Repay(loan.amount, block.timestamp, _loanID);  
 }
 
-function getAddresses() external view returns (address, address) {
-    return(egorasEUSD, eNFTAddress);
-}
+
 function rewardMeta() external view returns(bool, uint, uint, uint, uint, uint,address){
 return (canReward[currentPeriod], nextRewardDate, curVoters[currentPeriod].length,currentPeriod, dailyIncentive, currentPeriod, egorasEGC);
 }
