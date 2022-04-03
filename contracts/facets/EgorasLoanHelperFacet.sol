@@ -41,7 +41,7 @@ interface LOAN {
 function rewardMeta() external view returns(bool, uint, uint, uint, uint, address);
 function rewardUsserMeta(uint index, uint curPeriod) external view returns(address, uint, uint);
 function updatePeriods() external;
-function getLoanData(uint _lID) external view returns (Loan memory, bool);
+function getLoanData(uint _lID) external view returns (string memory, uint, uint, string memory, address, bool, string memory, uint, bool, bool);
 function getAddresses() external view returns (address, address);
 }
 
@@ -90,39 +90,59 @@ require(_HcanReward, "No votes yet");
 
 
 function buy(uint _id, string memory _buyerMetadata) external{
+    string memory title;
+    uint amount;
+    uint length;
+    string memory image_url;
+    address creator;
+    bool isloan;
+    string memory loanMetaData;
+    uint inventoryFee;
+    bool isConfirmed;
+
     LOAN ln = LOAN(address(this));
-    LoanPlaceholder memory buyorder;
+  
     bool isApproved;
-     (buyorder,isApproved) =  ln.getLoanData(_id);
-    require(!buyorder.isloan, "Invalid buy order.");
+     (title, amount, length, image_url, creator, isloan, loanMetaData, inventoryFee, isConfirmed, isApproved) = ln.getLoanData(_id);
+    require(!isloan, "Invalid buy order.");
     require(isApproved, "You can't buy this asset at the moment!");
     address egorasEUSD;
     address eNFTAddress;
     (egorasEUSD, eNFTAddress) = ln.getAddresses();
     IERC20 iERC20 = IERC20(egorasEUSD);
     NFT eNFT = NFT(eNFTAddress);
-    require(iERC20.allowance(msg.sender, address(this)) >= buyorder.amount, "Insufficient EUSD allowance for repayment!");
-    iERC20.burnFrom(msg.sender, buyorder.amount);
+    require(iERC20.allowance(msg.sender, address(this)) >= amount, "Insufficient EUSD allowance for repayment!");
+    iERC20.burnFrom(msg.sender, amount);
     eNFT.burn(_id);
     emit Bought(_id,_buyerMetadata, block.timestamp); 
 }
 
  function auction(uint _loanID, string memory _buyerMetadata) external{
+    string memory title;
+    uint amount;
+    uint length;
+    string memory image_url;
+    address creator;
+    bool isloan;
+    string memory loanMetaData;
+    uint inventoryFee;
+    bool isConfirmed;
    LOAN ln = LOAN(address(this));
-   LoanPlaceholder memory loan;
+  
    bool isApproved;
-   (loan,isApproved) =  ln.getLoanData(_loanID);
-   require(loan.isloan, "Invalid loan.");
-   require(block.timestamp >= loan.length, "You can't auction it now!");
+     (title, amount, length, image_url, creator, isloan, loanMetaData, inventoryFee, isConfirmed, isApproved) = ln.getLoanData(_loanID);
+ 
+   require(isloan, "Invalid loan.");
+   require(block.timestamp >= length, "You can't auction it now!");
    require(isApproved, "This loan is not eligible for repayment!");
-   require(loan.creator != msg.sender, "Unauthorized.");
+   require(creator != msg.sender, "Unauthorized.");
    address egorasEUSD;
     address eNFTAddress;
     (egorasEUSD, eNFTAddress) = ln.getAddresses();
     IERC20 iERC20 = IERC20(egorasEUSD);
     NFT eNFT = NFT(eNFTAddress);
-    require(iERC20.allowance(msg.sender, address(this)) >= loan.amount, "Insufficient EUSD allowance for repayment!");
-    iERC20.burnFrom(msg.sender, loan.amount);
+    require(iERC20.allowance(msg.sender, address(this)) >= amount, "Insufficient EUSD allowance for repayment!");
+    iERC20.burnFrom(msg.sender, amount);
     eNFT.burn(_loanID);
     emit Bought(_loanID,_buyerMetadata, block.timestamp); 
  }

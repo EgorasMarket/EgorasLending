@@ -395,9 +395,11 @@ function rewardUsserMeta(uint index, uint curPeriod) external view returns(addre
      uint total = currentTotalVotePower[curPeriod];
      return (voterAddress, amount, total);
 }
-function getLoanData(uint _lID) external view returns (Loan memory, bool) {
-     Loan memory loanPlaceholder = loans[_lID];
-     return (loanPlaceholder, isApproved[_lID]);
+
+
+function getLoanData(uint _lID) external view returns (string memory, uint, uint, string memory, address, bool, string memory, uint, bool, bool) {
+     Loan memory l = loans[_lID];
+     return (l.title, l.amount, l.length, l.image_url, l.creator, l.isloan, l.loanMetaData, l.inventoryFee, l.isConfirmed, isApproved[_lID]);
 }
 function updatePeriods() external{
    currentPeriod = block.timestamp;
